@@ -10,6 +10,7 @@
   <version>1.0-SNAPSHOT</version>
   <modules>
     <module>flink-demo-wordcount</module>
+    <module>flink-demo-stat</module>
   </modules>
 
   <name>flink-demo</name>
