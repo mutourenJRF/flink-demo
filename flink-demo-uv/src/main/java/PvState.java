@@ -1,5 +1,3 @@
-import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
@@ -10,37 +8,28 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+public class PvState {
 
-public class UVStats {
+    public static void main(String[] args) throws Exception{
 
-    public static final String DELIM = "\t";
 
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env=StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().setAutoWatermarkInterval(1000L);
 
-
-        DataStreamSource<String> data=env.addSource(new SourceDemo());
-
-
-        data
+        env.addSource(new SourceDemo())
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<String>() {
+                    @Override
                     public long extractAscendingTimestamp(String s) {
-                        String dateTime = s.split(DELIM, -1)[2];
+                        String dateTime = s.split(UVStats.DELIM, -1)[2];
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                         return LocalDateTime.parse(dateTime, formatter).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                     }
                 })
-                .keyBy(new KeySelector<String, String>() {
-                    public String getKey(String s) {
-                        String url = s.split(DELIM, -1)[0];
-                        return url;
-                    }
-                })
+                .keyBy(x->x.split(UVStats.DELIM, -1)[0])
                 .window(TumblingEventTimeWindows.of(Time.minutes(10)))
-                .process(new UVFunction())
+                .process(new PVFunction())
                 .print();
 
-        env.execute();
+        env.execute("start");
     }
 }
